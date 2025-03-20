@@ -1,25 +1,30 @@
 from flask import Blueprint, request, jsonify
+from flask_cors import cross_origin
 from database import db
 from models import Mercadoria
 from datetime import datetime
 
 routes_bp = Blueprint('routes', __name__)
 
-@routes_bp.route('/mercadorias', methods=['GET', 'POST'])
+@routes_bp.route('/mercadoria', methods=['GET', 'POST'])
+@cross_origin()  # ⬅️ Garante que CORS está habilitado para esta rota
 def mercadorias():
     if request.method == 'POST':
-        data = request.json
-        nova_mercadoria = Mercadoria(
-            nome=data['nome'],
-            numero_registro=data['numero_registro'],
-            fabricante=data['fabricante'],
-            tipo=data['tipo'],
-            quantidade=data['quantidade'],
-            data=datetime.strptime(data['data'], '%Y-%m-%d')
-        )
-        db.session.add(nova_mercadoria)
-        db.session.commit()
-        return jsonify({'message': 'Mercadoria cadastrada!'}), 201
+        try:
+            data = request.json
+            nova_mercadoria = Mercadoria(
+                nome=data['nome'],
+                numero_registro=data['numero_registro'],
+                fabricante=data['fabricante'],
+                tipo=data['tipo'],
+                quantidade=int(data['quantidade']),
+                data=datetime.strptime(data['data'], '%Y-%m-%d')
+            )
+            db.session.add(nova_mercadoria)
+            db.session.commit()
+            return jsonify({'message': 'Mercadoria cadastrada!'}), 201
+        except Exception as e:
+            return jsonify({'error': f'Erro ao cadastrar mercadoria: {str(e)}'}), 400
 
     mercadorias = Mercadoria.query.all()
     return jsonify([{
@@ -28,8 +33,8 @@ def mercadorias():
         'data': m.data.strftime('%Y-%m-%d')
     } for m in mercadorias])
 
-
 @routes_bp.route('/mercadoria/<int:id>', methods=['PUT'])
+@cross_origin()
 def editar_mercadoria(id):
     data = request.json
     mercadoria = Mercadoria.query.get(id)
@@ -47,8 +52,8 @@ def editar_mercadoria(id):
     db.session.commit()
     return jsonify({'message': 'Mercadoria atualizada com sucesso'})
 
-
 @routes_bp.route('/mercadoria/<int:id>', methods=['DELETE'])
+@cross_origin()
 def excluir_mercadoria(id):
     mercadoria = Mercadoria.query.get(id)
     

@@ -3,10 +3,12 @@ from database import db
 class Mercadoria(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(100), nullable=False)
-    numero_registro = db.Column(db.String(50), unique=True, nullable=False)
+    numero_registro = db.Column(db.String(50), nullable=False)
     fabricante = db.Column(db.String(100), nullable=False)
     tipo = db.Column(db.String(50), nullable=False)
     descricao = db.Column(db.Text, nullable=True)
+    quantidade = db.Column(db.Integer, nullable=False)
+    data = db.Column(db.Date, nullable=False)
 
 class Entrada(db.Model):
     id = db.Column(db.Integer, primary_key=True)
