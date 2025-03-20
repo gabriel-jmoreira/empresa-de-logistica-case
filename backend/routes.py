@@ -1,20 +1,41 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, send_file
 from flask_cors import cross_origin
 from database import db
 from models import Mercadoria
 from datetime import datetime
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+import os
 
-routes_bp = Blueprint('routes', __name__)
+routes_bp = Blueprint('routes', __name__)  # Apenas um Blueprint
+
+@routes_bp.route('/relatorio', methods=['GET'])
+def gerar_relatorio():
+    mercadorias = Mercadoria.query.all()
+    caminho_pdf = "instance/relatorio.pdf"
+
+    c = canvas.Canvas(caminho_pdf, pagesize=letter)
+    c.drawString(100, 750, "Relatório de Mercadorias")
+
+    y = 720
+    for mercadoria in mercadorias:
+        c.drawString(100, y, f"Nome: {mercadoria.nome} | Registro: {mercadoria.numero_registro} | "
+                              f"Fabricante: {mercadoria.fabricante} | Tipo: {mercadoria.tipo} | "
+                              f"Quantidade: {mercadoria.quantidade} | Data: {mercadoria.data.strftime('%Y-%m-%d')}")
+        y -= 20
+
+    c.save()
+    return send_file(caminho_pdf, as_attachment=True)
 
 @routes_bp.route('/mercadoria', methods=['GET', 'POST'])
-@cross_origin()  # ⬅️ Garante que CORS está habilitado para esta rota
+@cross_origin()
 def mercadorias():
     if request.method == 'POST':
         try:
             data = request.json
             nova_mercadoria = Mercadoria(
                 nome=data['nome'],
-                numero_registro=data['numero_registro'],
+                numero_registro=data['numero_registro'],  # Certifique-se de que existe no modelo
                 fabricante=data['fabricante'],
                 tipo=data['tipo'],
                 quantidade=int(data['quantidade']),
@@ -28,7 +49,7 @@ def mercadorias():
 
     mercadorias = Mercadoria.query.all()
     return jsonify([{
-        'id': m.id, 'nome': m.nome, 'registro': m.numero_registro,
+        'id': m.id, 'nome': m.nome, 'numero_registro': m.numero_registro,
         'fabricante': m.fabricante, 'tipo': m.tipo, 'quantidade': m.quantidade,
         'data': m.data.strftime('%Y-%m-%d')
     } for m in mercadorias])
